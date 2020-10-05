@@ -115,7 +115,9 @@ static void autokeyframe_pose(
   ToolSettings *ts = scene->toolsettings;
   KeyingSet *active_ks = ANIM_scene_get_active_keyingset(scene);
   ListBase nla_cache = {NULL, NULL};
-  float cfra = (float)CFRA;
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  const AnimationEvalContext anim_eval_context = BKE_animsys_eval_context_construct(depsgraph,
+                                                                                    (float)CFRA);
   eInsertKeyFlags flag = 0;
 
   /* flag is initialized from UserPref keyframing settings
@@ -146,7 +148,8 @@ static void autokeyframe_pose(
     /* only insert into active keyingset? */
     if (IS_AUTOKEY_FLAG(scene, ONLYKEYINGSET) && (active_ks)) {
       /* run the active Keying Set on the current datasource */
-      ANIM_apply_keyingset(C, &dsources, NULL, active_ks, MODIFYKEY_MODE_INSERT, cfra);
+      ANIM_apply_keyingset(
+          C, &dsources, NULL, active_ks, MODIFYKEY_MODE_INSERT, anim_eval_context.eval_time);
     }
     /* only insert into available channels? */
     else if (IS_AUTOKEY_FLAG(scene, INSERTAVAIL)) {
@@ -169,7 +172,7 @@ static void autokeyframe_pose(
                             ((fcu->grp) ? (fcu->grp->name) : (NULL)),
                             fcu->rna_path,
                             fcu->array_index,
-                            cfra,
+                            &anim_eval_context,
                             ts->keyframe_type,
                             &nla_cache,
                             flag);
@@ -220,21 +223,25 @@ static void autokeyframe_pose(
 
       if (do_loc) {
         KeyingSet *ks = ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOCATION_ID);
-        ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
+        ANIM_apply_keyingset(
+            C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, anim_eval_context.eval_time);
       }
       if (do_rot) {
         KeyingSet *ks = ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_ROTATION_ID);
-        ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
+        ANIM_apply_keyingset(
+            C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, anim_eval_context.eval_time);
       }
       if (do_scale) {
         KeyingSet *ks = ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_SCALING_ID);
-        ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
+        ANIM_apply_keyingset(
+            C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, anim_eval_context.eval_time);
       }
     }
     /* insert keyframe in all (transform) channels */
     else {
       KeyingSet *ks = ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOC_ROT_SCALE_ID);
-      ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, cfra);
+      ANIM_apply_keyingset(
+          C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, anim_eval_context.eval_time);
     }
 
     /* free temp info */
@@ -342,6 +349,10 @@ static short pose_grab_with_ik_add(bPoseChannel *pchan)
               }
             }
           }
+
+          /* Return early (as in: don't actually create a temporary constraint here), since adding
+           * will take place later in add_pose_transdata() for targetless constraints. */
+          return 0;
         }
       }
 
@@ -695,10 +706,14 @@ static void add_pose_transdata(TransInfo *t, bPoseChannel *pchan, Object *ob, Tr
 
       /* Add a temporary auto IK constraint here, as we will only temporarily active this
        * targetless bone during transform. (Targetless IK constraints are treated as if they are
-       * disabled unless they are transformed). */
-      add_temporary_ik_constraint(pchan, data);
-      Main *bmain = CTX_data_main(t->context);
-      update_deg_with_temporary_ik(bmain, ob);
+       * disabled unless they are transformed).
+       * Only do this for targetless IK though, AutoIK already added a constraint in
+       * pose_grab_with_ik_add() beforehand. */
+      if ((data->flag & CONSTRAINT_IK_TEMP) == 0) {
+        add_temporary_ik_constraint(pchan, data);
+        Main *bmain = CTX_data_main(t->context);
+        update_deg_with_temporary_ik(bmain, ob);
+      }
 
       /* only object matrix correction */
       copy_m3_m3(td->mtx, omat);
@@ -1249,7 +1264,7 @@ void recalcData_edit_armature(TransInfo *t)
             rotation_between_vecs_to_quat(qrot, td->axismtx[1], vec);
             mul_qt_v3(qrot, up_axis);
 
-            /* roll has a tendency to flip in certain orientations - [#34283], [#33974] */
+            /* roll has a tendency to flip in certain orientations - T34283, T33974. */
             roll = ED_armature_ebone_roll_to_vector(ebo, up_axis, false);
             ebo->roll = angle_compat_rad(roll, td->ival);
           }
@@ -1343,10 +1358,14 @@ static void pose_transform_mirror_update(TransInfo *t, TransDataContainer *tc, O
       data->flag |= CONSTRAINT_IK_AUTO;
       /* Add a temporary auto IK constraint here, as we will only temporarily active this
        * target-less bone during transform. (Target-less IK constraints are treated as if they are
-       * disabled unless they are transformed) */
-      add_temporary_ik_constraint(pchan, data);
-      Main *bmain = CTX_data_main(t->context);
-      update_deg_with_temporary_ik(bmain, ob);
+       * disabled unless they are transformed).
+       * Only do this for targetless IK though, AutoIK already added a constraint in
+       * pose_grab_with_ik_add() beforehand. */
+      if ((data->flag & CONSTRAINT_IK_TEMP) == 0) {
+        add_temporary_ik_constraint(pchan, data);
+        Main *bmain = CTX_data_main(t->context);
+        update_deg_with_temporary_ik(bmain, ob);
+      }
     }
 
     if (pid) {
@@ -1624,7 +1643,7 @@ static short apply_targetless_ik(Object *ob)
           normalize_m3(rmat3);
 
           /* rotation */
-          /* [#22409] is partially caused by this, as slight numeric error introduced during
+          /* T22409 is partially caused by this, as slight numeric error introduced during
            * the solving process leads to locked-axis values changing. However, we cannot modify
            * the values here, or else there are huge discrepancies between IK-solver (interactive)
            * and applied poses. */
@@ -1724,7 +1743,7 @@ void special_aftertrans_update__pose(bContext *C, TransInfo *t)
       if ((t->flag & T_AUTOIK) && (t->options & CTX_AUTOCONFIRM)) {
         /* when running transform non-interactively (operator exec),
          * we need to update the pose otherwise no updates get called during
-         * transform and the auto-ik is not applied. see [#26164] */
+         * transform and the auto-ik is not applied. see T26164. */
         struct Object *pose_ob = tc->poseobj;
         BKE_pose_where_is(t->depsgraph, t->scene, pose_ob);
       }

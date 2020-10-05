@@ -20,8 +20,7 @@
  * \ingroup render
  */
 
-#ifndef __RE_SHADER_EXT_H__
-#define __RE_SHADER_EXT_H__
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,14 +61,14 @@ int multitex_ext(struct Tex *tex,
                  const bool skip_load_image);
 /* nodes disabled */
 int multitex_ext_safe(struct Tex *tex,
-                      float texvec[3],
+                      const float texvec[3],
                       struct TexResult *texres,
                       struct ImagePool *pool,
                       bool scene_color_manage,
                       const bool skip_load_image);
 /* only for internal node usage */
 int multitex_nodes(struct Tex *tex,
-                   float texvec[3],
+                   const float texvec[3],
                    float dxt[3],
                    float dyt[3],
                    int osatex,
@@ -82,5 +81,3 @@ int multitex_nodes(struct Tex *tex,
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __RE_SHADER_EXT_H__ */

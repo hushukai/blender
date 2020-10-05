@@ -138,6 +138,11 @@ void OVERLAY_outline_cache_init(OVERLAY_Data *vedata)
     pd->outlines_grp = grp = DRW_shgroup_create(sh_geom, psl->outlines_prepass_ps);
     DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
 
+    GPUShader *sh_geom_ptcloud = OVERLAY_shader_outline_prepass_pointcloud();
+
+    pd->outlines_ptcloud_grp = grp = DRW_shgroup_create(sh_geom_ptcloud, psl->outlines_prepass_ps);
+    DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
+
     GPUShader *sh_gpencil = OVERLAY_shader_outline_prepass_gpencil();
 
     pd->outlines_gpencil_grp = grp = DRW_shgroup_create(sh_gpencil, psl->outlines_prepass_ps);
@@ -267,6 +272,17 @@ static void OVERLAY_outline_gpencil(OVERLAY_PrivateData *pd, Object *ob)
                                   pd->cfra);
 }
 
+static void OVERLAY_outline_volume(OVERLAY_PrivateData *pd, Object *ob)
+{
+  struct GPUBatch *geom = DRW_cache_volume_selection_surface_get(ob);
+  if (geom == NULL) {
+    return;
+  }
+
+  DRWShadingGroup *shgroup = pd->outlines_grp;
+  DRW_shgroup_call(shgroup, geom, ob);
+}
+
 void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
                                     Object *ob,
                                     OVERLAY_DupliData *dupli,
@@ -285,6 +301,17 @@ void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
 
   if (ob->type == OB_GPENCIL) {
     OVERLAY_outline_gpencil(pd, ob);
+    return;
+  }
+
+  if (ob->type == OB_VOLUME) {
+    OVERLAY_outline_volume(pd, ob);
+    return;
+  }
+
+  if (ob->type == OB_POINTCLOUD && pd->wireframe_mode) {
+    /* Looks bad in this case. Could be relaxed if we draw a
+     * wireframe of some sort in the future. */
     return;
   }
 
@@ -307,12 +334,18 @@ void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
     }
 
     if (geom) {
-      shgroup = pd->outlines_grp;
+      shgroup = (ob->type == OB_POINTCLOUD) ? pd->outlines_ptcloud_grp : pd->outlines_grp;
     }
   }
 
   if (shgroup && geom) {
-    DRW_shgroup_call(shgroup, geom, ob);
+    if (ob->type == OB_POINTCLOUD) {
+      /* Draw range to avoid drawcall batching messing up the instance attrib. */
+      DRW_shgroup_call_instance_range(shgroup, ob, geom, 0, 0);
+    }
+    else {
+      DRW_shgroup_call(shgroup, geom, ob);
+    }
   }
 
   if (init_dupli) {
@@ -325,7 +358,7 @@ void OVERLAY_outline_draw(OVERLAY_Data *vedata)
 {
   OVERLAY_FramebufferList *fbl = vedata->fbl;
   OVERLAY_PassList *psl = vedata->psl;
-  float clearcol[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+  const float clearcol[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
   bool do_outlines = psl->outlines_prepass_ps != NULL &&
                      !DRW_pass_is_empty(psl->outlines_prepass_ps);

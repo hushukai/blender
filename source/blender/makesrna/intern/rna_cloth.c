@@ -34,7 +34,7 @@
 #include "BKE_cloth.h"
 #include "BKE_modifier.h"
 
-#include "BPH_mass_spring.h"
+#include "SIM_mass_spring.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -482,18 +482,18 @@ static void rna_def_cloth_solver_result(BlenderRNA *brna)
   PropertyRNA *prop;
 
   static const EnumPropertyItem status_items[] = {
-      {BPH_SOLVER_SUCCESS, "SUCCESS", 0, "Success", "Computation was successful"},
-      {BPH_SOLVER_NUMERICAL_ISSUE,
+      {SIM_SOLVER_SUCCESS, "SUCCESS", 0, "Success", "Computation was successful"},
+      {SIM_SOLVER_NUMERICAL_ISSUE,
        "NUMERICAL_ISSUE",
        0,
        "Numerical Issue",
        "The provided data did not satisfy the prerequisites"},
-      {BPH_SOLVER_NO_CONVERGENCE,
+      {SIM_SOLVER_NO_CONVERGENCE,
        "NO_CONVERGENCE",
        0,
        "No Convergence",
        "Iterative procedure did not converge"},
-      {BPH_SOLVER_INVALID_INPUT,
+      {SIM_SOLVER_INVALID_INPUT,
        "INVALID_INPUT",
        0,
        "Invalid Input",
@@ -711,7 +711,6 @@ static void rna_def_cloth_sim_settings(BlenderRNA *brna)
   prop = RNA_def_property(srna, "voxel_cell_size", PROP_FLOAT, PROP_UNSIGNED);
   RNA_def_property_float_sdna(prop, NULL, "voxel_cell_size");
   RNA_def_property_range(prop, 0.0001f, 10000.0f);
-  RNA_def_property_float_default(prop, 0.1f);
   RNA_def_property_ui_text(
       prop, "Voxel Grid Cell Size", "Size of the voxel grid cells for interaction effects");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
@@ -1005,7 +1004,6 @@ static void rna_def_cloth_sim_settings(BlenderRNA *brna)
   prop = RNA_def_property(srna, "pressure_factor", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "pressure_factor");
   RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_default(prop, 1.0f);
   RNA_def_property_ui_text(prop,
                            "Pressure Scale",
                            "Ambient pressure (kPa) that balances out between the inside and "

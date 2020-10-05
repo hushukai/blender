@@ -14,8 +14,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#ifndef __BMESH_H__
-#define __BMESH_H__
+#pragma once
 
 /** \file
  * \ingroup bmesh
@@ -42,7 +41,7 @@
  * \subsection bm_faces Faces
  *
  * Faces in BMesh are stored as a circular linked list of loops. Loops store per-face-vertex data
- * (amongst other things outlined later in this document), and define the face boundary.
+ * (among other things outlined later in this document), and define the face boundary.
  * \subsection bm_loop The Loop
  *
  * Loops can be thought of as a *face-corner*, since faces don't reference verts or edges directly.
@@ -191,7 +190,6 @@
 #include "DNA_customdata_types.h" /* BMesh struct in bmesh_class.h uses */
 #include "DNA_listBase.h"         /* selection history uses */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -231,5 +229,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __BMESH_H__ */

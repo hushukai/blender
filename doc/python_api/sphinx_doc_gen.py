@@ -99,6 +99,7 @@ SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 # See: D6261 for reference.
 USE_ONLY_BUILTIN_RNA_TYPES = True
 
+
 def handle_args():
     '''
     Parse the args passed to Blender after "--", ignored by Blender
@@ -173,7 +174,7 @@ def handle_args():
                         dest="log",
                         default=False,
                         action='store_true',
-                        help="Log the output of the api dump and sphinx|latex "
+                        help="Log the output of the API dump and sphinx|latex "
                              "warnings and errors (default=False).\n"
                              "If given, save logs in:\n"
                              "* OUTPUT_DIR/.bpy.log\n"
@@ -225,6 +226,7 @@ else:
         "aud",
         "bgl",
         "blf",
+        "bl_math",
         "imbuf",
         "bmesh",
         "bmesh.ops",
@@ -349,9 +351,9 @@ RST_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "rst"))
 # stored in ./rst/info_*
 INFO_DOCS = (
     ("info_quickstart.rst",
-     "Quickstart: new to Blender or scripting and want to get your feet wet?"),
+     "Quickstart: New to Blender or scripting and want to get your feet wet?"),
     ("info_overview.rst",
-     "API Overview: a more complete explanation of Python integration"),
+     "API Overview: A more complete explanation of Python integration"),
     ("info_api_reference.rst",
      "API Reference Usage: examples of how to use the API reference docs"),
     ("info_best_practice.rst",
@@ -359,8 +361,8 @@ INFO_DOCS = (
     ("info_tips_and_tricks.rst",
      "Tips and Tricks: Hints to help you while writing scripts for Blender"),
     ("info_gotcha.rst",
-     "Gotcha's: some of the problems you may encounter when writing scripts"),
-    ("change_log.rst", "List of changes since last Blender release"),
+     "Gotcha's: Some of the problems you may encounter when writing scripts"),
+    ("change_log.rst", "Change Log: List of changes since last Blender release"),
 )
 
 # only support for properties atm.
@@ -695,13 +697,11 @@ def py_descr2sphinx(ident, fw, descr, module_name, type_name, identifier):
         doc = undocumented_message(module_name, type_name, identifier)
 
     if type(descr) == GetSetDescriptorType:
-        fw(ident + ".. attribute:: %s\n" % identifier)
-        fw(ident + "   :noindex:\n\n")
+        fw(ident + ".. attribute:: %s\n\n" % identifier)
         write_indented_lines(ident + "   ", fw, doc, False)
         fw("\n")
     elif type(descr) == MemberDescriptorType:  # same as above but use 'data'
-        fw(ident + ".. data:: %s\n" % identifier)
-        fw(ident + "   :noindex:\n\n")
+        fw(ident + ".. data:: %s\n\n" % identifier)
         write_indented_lines(ident + "   ", fw, doc, False)
         fw("\n")
     elif type(descr) in {MethodDescriptorType, ClassMethodDescriptorType}:
@@ -741,14 +741,11 @@ def pyprop2sphinx(ident, fw, identifier, py_prop):
     '''
     # readonly properties use "data" directive, variables use "attribute" directive
     if py_prop.fset is None:
-        fw(ident + ".. data:: %s\n" % identifier)
-        fw(ident + "   :noindex:\n\n")
+        fw(ident + ".. data:: %s\n\n" % identifier)
     else:
-        fw(ident + ".. attribute:: %s\n" % identifier)
-        fw(ident + "   :noindex:\n\n")
+        fw(ident + ".. attribute:: %s\n\n" % identifier)
     write_indented_lines(ident + "   ", fw, py_prop.__doc__)
     if py_prop.fset is None:
-        fw("\n")
         fw(ident + "   (readonly)\n\n")
     else:
         fw("\n")
@@ -914,8 +911,7 @@ def pymodule2sphinx(basepath, module_name, module, title):
         elif issubclass(value_type, (bool, int, float, str, tuple)):
             # constant, not much fun we can do here except to list it.
             # TODO, figure out some way to document these!
-            fw(".. data:: %s\n" % attribute)
-            fw("   :noindex:\n\n")
+            fw(".. data:: %s\n\n" % attribute)
             write_indented_lines("   ", fw, "constant value %s" % repr(value), False)
             fw("\n")
         else:
@@ -1100,7 +1096,7 @@ def pycontext2sphinx(basepath):
     fw("The context members available depend on the area of Blender which is currently being accessed.\n")
     fw("\n")
     fw("Note that all context values are readonly,\n")
-    fw("but may be modified through the data api or by running operators\n\n")
+    fw("but may be modified through the data API or by running operators\n\n")
 
     def write_contex_cls():
 
@@ -1125,8 +1121,7 @@ def pycontext2sphinx(basepath):
 
             type_descr = prop.get_type_description(
                 class_fmt=":class:`bpy.types.%s`", collection_id=_BPY_PROP_COLLECTION_ID)
-            fw(".. data:: %s\n" % prop.identifier)
-            fw("   :noindex:\n\n")
+            fw(".. data:: %s\n\n" % prop.identifier)
             if prop.description:
                 fw("   %s\n\n" % prop.description)
 
@@ -1171,8 +1166,7 @@ def pycontext2sphinx(basepath):
         i = 0
         while char_array[i] is not None:
             member = ctypes.string_at(char_array[i]).decode(encoding="ascii")
-            fw(".. data:: %s\n" % member)
-            fw("   :noindex:\n\n")
+            fw(".. data:: %s\n\n" % member)
             member_type, is_seq = context_type_map[member]
             fw("   :type: %s :class:`bpy.types.%s`\n\n" % ("sequence of " if is_seq else "", member_type))
             unique.add(member)
@@ -1211,7 +1205,7 @@ def pyrna_enum2sphinx(prop, use_empty_descriptions=False):
                 identifier,
                 # Account for multi-line enum descriptions, allowing this to be a block of text.
                 indent(", ".join(escape_rst(val) for val in (name, description) if val) or "Undocumented", "  "),
-             )
+            )
             for identifier, name, description in prop.enum_items
         ])
     else:
@@ -1319,7 +1313,7 @@ def pyrna2sphinx(basepath):
 
         fw(title_string(title, "="))
 
-        fw(".. module:: %s.%s\n\n" % (struct_module_name, struct_id))
+        fw(".. module:: %s\n\n" % struct_module_name)
 
         # docs first?, ok
         write_example_ref("", fw, "%s.%s" % (struct_module_name, struct_id))
@@ -1378,11 +1372,9 @@ def pyrna2sphinx(basepath):
             type_descr = prop.get_type_description(class_fmt=":class:`%s`", collection_id=_BPY_PROP_COLLECTION_ID)
             # readonly properties use "data" directive, variables properties use "attribute" directive
             if 'readonly' in type_descr:
-                fw("   .. data:: %s\n" % prop.identifier)
-                fw("      :noindex:\n\n")
+                fw("   .. data:: %s\n\n" % prop.identifier)
             else:
-                fw("   .. attribute:: %s\n" % prop.identifier)
-                fw("      :noindex:\n\n")
+                fw("   .. attribute:: %s\n\n" % prop.identifier)
             if prop.description:
                 fw("      %s\n\n" % prop.description)
 
@@ -1552,7 +1544,7 @@ def pyrna2sphinx(basepath):
 
             fw(title_string(class_name, "="))
 
-            fw(".. module:: %s.%s\n" % (class_module_name, class_name))
+            fw(".. module:: %s\n" % class_module_name)
             fw("\n")
 
             if use_subclasses:
@@ -1798,8 +1790,18 @@ def write_rst_contents(basepath):
 
     standalone_modules = (
         # submodules are added in parent page
-        "mathutils", "freestyle", "bgl", "blf", "imbuf", "gpu", "gpu_extras",
-        "aud", "bpy_extras", "idprop.types", "bmesh",
+        "aud",
+        "bgl",
+        "bl_math",
+        "blf",
+        "bmesh",
+        "bpy_extras",
+        "freestyle",
+        "gpu",
+        "gpu_extras",
+        "idprop.types",
+        "imbuf",
+        "mathutils",
     )
 
     for mod in standalone_modules:
@@ -1951,6 +1953,7 @@ def write_rst_importable_modules(basepath):
         "mathutils.kdtree": "KDTree Utilities",
         "mathutils.interpolate": "Interpolation Utilities",
         "mathutils.noise": "Noise Utilities",
+        "bl_math": "Additional Math Functions",
         "freestyle": "Freestyle Module",
         "freestyle.types": "Freestyle Types",
         "freestyle.predicates": "Freestyle Predicates",

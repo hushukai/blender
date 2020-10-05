@@ -21,8 +21,7 @@
  * \ingroup nodes
  */
 
-#ifndef __NODE_TEXTURE_UTIL_H__
-#define __NODE_TEXTURE_UTIL_H__
+#pragma once
 
 #include <math.h>
 #include <string.h>
@@ -71,7 +70,7 @@ extern "C" {
 typedef struct TexCallData {
   TexResult *target;
   /* all float[3] */
-  float *co;
+  const float *co;
   float *dxt, *dyt;
 
   int osatex;
@@ -85,7 +84,7 @@ typedef struct TexCallData {
 } TexCallData;
 
 typedef struct TexParams {
-  float *co;
+  const float *co;
   float *dxt, *dyt;
   const float *previewco;
   int cfra;
@@ -130,6 +129,4 @@ void params_from_cdata(TexParams *out, TexCallData *in);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

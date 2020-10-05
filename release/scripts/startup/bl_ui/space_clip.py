@@ -922,6 +922,15 @@ class CLIP_PT_tracking_lens(Panel):
             col = layout.column(align=True)
             col.prop(camera, "nuke_k1")
             col.prop(camera, "nuke_k2")
+        elif camera.distortion_model == 'BROWN':
+            col = layout.column(align=True)
+            col.prop(camera, "brown_k1")
+            col.prop(camera, "brown_k2")
+            col.prop(camera, "brown_k3")
+            col.prop(camera, "brown_k4")
+            col.separator()
+            col.prop(camera, "brown_p1")
+            col.prop(camera, "brown_p2")
 
 
 class CLIP_PT_marker(CLIP_PT_tracking_panel, Panel):
@@ -1238,7 +1247,7 @@ class CLIP_MT_view_zoom(Menu):
 
             layout.operator(
                 "clip.view_zoom_ratio",
-                text=iface_(f"Zoom {a:d}:{b:d}"),
+                text=iface_("Zoom %d:%d") % (a, b),
                 translate=False,
             ).ratio = a / b
 

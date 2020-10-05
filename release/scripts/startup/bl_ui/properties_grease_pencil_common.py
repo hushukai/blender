@@ -279,6 +279,31 @@ class GPENCIL_MT_snap(Menu):
         layout.operator("view3d.snap_cursor_to_grid", text="Cursor to Grid")
 
 
+class GPENCIL_MT_snap_pie(Menu):
+    bl_label = "Snap"
+
+    def draw(self, _context):
+        layout = self.layout
+        pie = layout.menu_pie()
+
+        pie.operator("view3d.snap_cursor_to_grid", text="Cursor to Grid", icon='CURSOR')
+        pie.operator("gpencil.snap_to_grid", text="Selection to Grid", icon='RESTRICT_SELECT_OFF')
+        pie.operator("gpencil.snap_cursor_to_selected", text="Cursor to Selected", icon='CURSOR')
+        pie.operator(
+            "gpencil.snap_to_cursor",
+            text="Selection to Cursor",
+            icon='RESTRICT_SELECT_OFF'
+        ).use_offset = False
+        pie.operator(
+            "gpencil.snap_to_cursor",
+            text="Selection to Cursor (Keep Offset)",
+            icon='RESTRICT_SELECT_OFF'
+        ).use_offset = True
+        pie.separator()
+        pie.operator("view3d.snap_cursor_to_center", text="Cursor to World Origin", icon='CURSOR')
+        pie.separator()
+
+
 class GPENCIL_MT_move_to_layer(Menu):
     bl_label = "Move to Layer"
 
@@ -380,6 +405,7 @@ class GPENCIL_MT_cleanup(Menu):
         layout = self.layout
 
         layout.operator("gpencil.frame_clean_loose", text="Delete Loose Points")
+        layout.operator("gpencil.frame_clean_duplicate", text="Delete Duplicated Frames")
 
         if ob.mode != 'PAINT_GPENCIL':
             layout.operator("gpencil.stroke_merge_by_distance", text="Merge by Distance")
@@ -788,7 +814,7 @@ class GPENCIL_MT_layer_mask_menu(Menu):
         for gpl in gpd.layers:
             if gpl != gpl_active and gpl.info not in gpl_active.mask_layers:
                 done = True
-                layout.operator("gpencil.layer_mask_add", text=gpl.info).name=gpl.info
+                layout.operator("gpencil.layer_mask_add", text=gpl.info).name = gpl.info
 
         if done is False:
             layout.label(text="No layers to add")
@@ -815,7 +841,7 @@ class GreasePencilLayerMasksPanel:
             row = layout.row()
             col = row.column()
             col.template_list("GPENCIL_UL_masks", "", gpl, "mask_layers", gpl.mask_layers,
-                            "active_mask_index", rows=rows, sort_lock=True)
+                              "active_mask_index", rows=rows, sort_lock=True)
 
             col2 = row.column(align=True)
             col2.menu("GPENCIL_MT_layer_mask_menu", icon='ADD', text="")
@@ -901,6 +927,7 @@ class GreasePencilFlipTintColors(Operator):
 
 classes = (
     GPENCIL_MT_snap,
+    GPENCIL_MT_snap_pie,
     GPENCIL_MT_cleanup,
     GPENCIL_MT_move_to_layer,
     GPENCIL_MT_layer_active,

@@ -23,8 +23,7 @@
  * Structs used for camera tracking and the movie-clip editor.
  */
 
-#ifndef __DNA_TRACKING_TYPES_H__
-#define __DNA_TRACKING_TYPES_H__
+#pragma once
 
 #include "DNA_defs.h"
 #include "DNA_listBase.h"
@@ -73,6 +72,12 @@ typedef struct MovieTrackingCamera {
 
   /* Nuke distortion model coefficients */
   float nuke_k1, nuke_k2;
+
+  /* Brown-Conrady distortion model coefficients */
+  /** Brown-Conrady radial distortion **/
+  float brown_k1, brown_k2, brown_k3, brown_k4;
+  /** Brown-Conrady tangential distortion **/
+  float brown_p1, brown_p2;
 } MovieTrackingCamera;
 
 typedef struct MovieTrackingMarker {
@@ -459,6 +464,7 @@ enum {
   TRACKING_DISTORTION_MODEL_POLYNOMIAL = 0,
   TRACKING_DISTORTION_MODEL_DIVISION = 1,
   TRACKING_DISTORTION_MODEL_NUKE = 2,
+  TRACKING_DISTORTION_MODEL_BROWN = 3,
 };
 
 /* MovieTrackingCamera->units */
@@ -617,5 +623,3 @@ enum {
   PLANE_TRACK_LOCKED = (1 << 2),
   PLANE_TRACK_AUTOKEY = (1 << 3),
 };
-
-#endif /* __DNA_TRACKING_TYPES_H__ */

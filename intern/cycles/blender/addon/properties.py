@@ -143,7 +143,7 @@ enum_texture_limit = (
     ('8192', "8192", "Limit texture size to 8192 pixels", 7),
 )
 
-enum_view3d_shading_render_pass= (
+enum_view3d_shading_render_pass = (
     ('', "General", ""),
 
     ('COMBINED', "Combined", "Show the Combined Render pass", 1),
@@ -188,10 +188,12 @@ def enum_openimagedenoise_denoiser(self, context):
         return [('OPENIMAGEDENOISE', "OpenImageDenoise", "Use Intel OpenImageDenoise AI denoiser running on the CPU", 4)]
     return []
 
+
 def enum_optix_denoiser(self, context):
     if not context or bool(context.preferences.addons[__package__].preferences.get_devices_for_type('OPTIX')):
         return [('OPTIX', "OptiX", "Use the OptiX AI denoiser with GPU acceleration, only available on NVIDIA GPUs", 2)]
     return []
+
 
 def enum_preview_denoiser(self, context):
     optix_items = enum_optix_denoiser(self, context)
@@ -206,13 +208,15 @@ def enum_preview_denoiser(self, context):
     items += oidn_items
     return items
 
+
 def enum_denoiser(self, context):
     items = [('NLM', "NLM", "Cycles native non-local means denoiser, running on any compute device", 1)]
     items += enum_optix_denoiser(self, context)
     items += enum_openimagedenoise_denoiser(self, context)
     return items
 
-enum_denoising_optix_input_passes = (
+
+enum_denoising_input_passes = (
     ('RGB', "Color", "Use only color as input", 1),
     ('RGB_ALBEDO', "Color + Albedo", "Use color and albedo data as input", 2),
     ('RGB_ALBEDO_NORMAL', "Color + Albedo + Normal", "Use color, albedo and normal data as input", 3),
@@ -413,18 +417,18 @@ class CyclesRenderSettings(bpy.types.PropertyGroup):
     )
 
     min_light_bounces: IntProperty(
-            name="Min Light Bounces",
-            description="Minimum number of light bounces. Setting this higher reduces noise in the first bounces, "
-                        "but can also be less efficient for more complex geometry like hair and volumes",
-            min=0, max=1024,
-            default=0,
+        name="Min Light Bounces",
+        description="Minimum number of light bounces. Setting this higher reduces noise in the first bounces, "
+        "but can also be less efficient for more complex geometry like hair and volumes",
+        min=0, max=1024,
+        default=0,
     )
     min_transparent_bounces: IntProperty(
-            name="Min Transparent Bounces",
-            description="Minimum number of transparent bounces. Setting this higher reduces noise in the first bounces, "
-                        "but can also be less efficient for more complex geometry like hair and volumes",
-            min=0, max=1024,
-            default=0,
+        name="Min Transparent Bounces",
+        description="Minimum number of transparent bounces. Setting this higher reduces noise in the first bounces, "
+        "but can also be less efficient for more complex geometry like hair and volumes",
+        min=0, max=1024,
+        default=0,
     )
 
     caustics_reflective: BoolProperty(
@@ -1325,6 +1329,7 @@ class CyclesAOVPass(bpy.types.PropertyGroup):
         default=""
     )
 
+
 class CyclesRenderLayerSettings(bpy.types.PropertyGroup):
 
     pass_debug_bvh_traversed_nodes: BoolProperty(
@@ -1451,9 +1456,16 @@ class CyclesRenderLayerSettings(bpy.types.PropertyGroup):
 
     denoising_optix_input_passes: EnumProperty(
         name="Input Passes",
-        description="Passes handed over to the OptiX denoiser (this can have different effects on the denoised image)",
-        items=enum_denoising_optix_input_passes,
+        description="Passes used by the denoiser to distinguish noise from shader and geometry detail",
+        items=enum_denoising_input_passes,
         default='RGB_ALBEDO',
+    )
+
+    denoising_openimagedenoise_input_passes: EnumProperty(
+        name="Input Passes",
+        description="Passes used by the denoiser to distinguish noise from shader and geometry detail",
+        items=enum_denoising_input_passes,
+        default='RGB_ALBEDO_NORMAL',
     )
 
     use_pass_crypto_object: BoolProperty(
@@ -1461,31 +1473,31 @@ class CyclesRenderLayerSettings(bpy.types.PropertyGroup):
         description="Render cryptomatte object pass, for isolating objects in compositing",
         default=False,
         update=update_render_passes,
-        )
+    )
     use_pass_crypto_material: BoolProperty(
         name="Cryptomatte Material",
         description="Render cryptomatte material pass, for isolating materials in compositing",
         default=False,
         update=update_render_passes,
-        )
+    )
     use_pass_crypto_asset: BoolProperty(
         name="Cryptomatte Asset",
         description="Render cryptomatte asset pass, for isolating groups of objects with the same parent",
         default=False,
         update=update_render_passes,
-        )
+    )
     pass_crypto_depth: IntProperty(
         name="Cryptomatte Levels",
         description="Sets how many unique objects can be distinguished per pixel",
         default=6, min=2, max=16, step=2,
         update=update_render_passes,
-        )
+    )
     pass_crypto_accurate: BoolProperty(
         name="Cryptomatte Accurate",
         description="Generate a more accurate Cryptomatte pass. CPU only, may render slower and use more memory",
         default=True,
         update=update_render_passes,
-        )
+    )
 
     aovs: CollectionProperty(
         type=CyclesAOVPass,
@@ -1636,7 +1648,6 @@ class CyclesPreferences(bpy.types.AddonPreferences):
             col = box.column(align=True)
             col.label(text="OptiX support is experimental", icon='INFO')
             col.label(text="Not all Cycles features are supported yet", icon='BLANK1')
-
 
     def draw_impl(self, layout, context):
         row = layout.row()

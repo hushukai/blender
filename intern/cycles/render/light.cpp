@@ -25,6 +25,7 @@
 #include "render/object.h"
 #include "render/scene.h"
 #include "render/shader.h"
+#include "render/stats.h"
 
 #include "util/util_foreach.h"
 #include "util/util_hash.h"
@@ -250,7 +251,7 @@ void LightManager::test_enabled_lights(Scene *scene)
 bool LightManager::object_usable_as_light(Object *object)
 {
   Geometry *geom = object->geometry;
-  if (geom->type != Geometry::MESH) {
+  if (geom->type != Geometry::MESH && geom->type != Geometry::VOLUME) {
     return false;
   }
   /* Skip objects with NaNs */
@@ -625,13 +626,19 @@ void LightManager::device_update_background(Device *device,
           }
         }
 
+        /* Determine sun direction from lat/long and texture mapping. */
         float latitude = sky->sun_elevation;
         float longitude = M_2PI_F - sky->sun_rotation + M_PI_2_F;
-        float half_angle = sky->sun_size * 0.5f;
-        kbackground->sun = make_float4(cosf(latitude) * cosf(longitude),
-                                       cosf(latitude) * sinf(longitude),
-                                       sinf(latitude),
-                                       half_angle);
+        float3 sun_direction = make_float3(
+            cosf(latitude) * cosf(longitude), cosf(latitude) * sinf(longitude), sinf(latitude));
+        Transform sky_transform = transform_inverse(sky->tex_mapping.compute_transform());
+        sun_direction = transform_direction(&sky_transform, sun_direction);
+
+        /* Pack sun direction and size. */
+        float half_angle = sky->get_sun_size() * 0.5f;
+        kbackground->sun = make_float4(
+            sun_direction.x, sun_direction.y, sun_direction.z, half_angle);
+
         kbackground->sun_weight = 4.0f;
         environment_res.x = max(environment_res.x, 512);
         environment_res.y = max(environment_res.y, 256);
@@ -954,6 +961,12 @@ void LightManager::device_update(Device *device,
 {
   if (!need_update)
     return;
+
+  scoped_callback_timer timer([scene](double time) {
+    if (scene->update_stats) {
+      scene->update_stats->light.times.add_entry({"device_update", time});
+    }
+  });
 
   VLOG(1) << "Total " << scene->lights.size() << " lights.";
 

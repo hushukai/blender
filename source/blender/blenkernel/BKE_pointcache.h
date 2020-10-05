@@ -17,8 +17,7 @@
  * All rights reserved.
  */
 
-#ifndef __BKE_POINTCACHE_H__
-#define __BKE_POINTCACHE_H__
+#pragma once
 
 /** \file
  * \ingroup bke
@@ -86,17 +85,12 @@ struct ListBase;
 struct Main;
 struct Object;
 struct ParticleKey;
-struct ParticleSimulationState;
 struct ParticleSystem;
 struct PointCache;
 struct RigidBodyWorld;
 struct Scene;
-struct Simulation;
 struct SoftBody;
 struct ViewLayer;
-
-struct OpenVDBReader;
-struct OpenVDBWriter;
 
 /* temp structure for read/write */
 typedef struct PTCacheData {
@@ -125,7 +119,6 @@ typedef struct PTCacheFile {
 
 enum {
   PTCACHE_FILE_PTCACHE = 0,
-  PTCACHE_FILE_OPENVDB = 1,
 };
 
 typedef struct PTCacheID {
@@ -147,7 +140,7 @@ typedef struct PTCacheID {
   /* copies point data to cache data */
   int (*write_point)(int index, void *calldata, void **data, int cfra);
   /* copies cache cata to point data */
-  void (*read_point)(int index, void *calldata, void **data, float cfra, float *old_data);
+  void (*read_point)(int index, void *calldata, void **data, float cfra, const float *old_data);
   /* interpolated between previously read point data and cache data */
   void (*interpolate_point)(int index,
                             void *calldata,
@@ -155,17 +148,12 @@ typedef struct PTCacheID {
                             float cfra,
                             float cfra1,
                             float cfra2,
-                            float *old_data);
+                            const float *old_data);
 
   /* copies point data to cache data */
   int (*write_stream)(PTCacheFile *pf, void *calldata);
   /* copies cache cata to point data */
   int (*read_stream)(PTCacheFile *pf, void *calldata);
-
-  /* copies point data to cache data */
-  int (*write_openvdb_stream)(struct OpenVDBWriter *writer, void *calldata);
-  /* copies cache cata to point data */
-  int (*read_openvdb_stream)(struct OpenVDBReader *reader, void *calldata);
 
   /* copies custom extradata to cache data */
   void (*write_extra_data)(void *calldata, struct PTCacheMem *pm, int cfra);
@@ -296,9 +284,6 @@ void BKE_ptcache_id_from_dynamicpaint(PTCacheID *pid,
                                       struct Object *ob,
                                       struct DynamicPaintSurface *surface);
 void BKE_ptcache_id_from_rigidbody(PTCacheID *pid, struct Object *ob, struct RigidBodyWorld *rbw);
-void BKE_ptcache_id_from_sim_particles(PTCacheID *pid,
-                                       struct ParticleSimulationState *state_orig,
-                                       struct ParticleSimulationState *state_cow);
 
 PTCacheID BKE_ptcache_id_find(struct Object *ob, struct Scene *scene, struct PointCache *cache);
 void BKE_ptcache_ids_from_object(struct ListBase *lb,
@@ -391,6 +376,4 @@ void BKE_ptcache_invalidate(struct PointCache *cache);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -36,8 +36,9 @@ set(INC
   ../makesrna
   ../modifiers
   ../nodes
-  ../physics
+  ../sequencer
   ../shader_fx
+  ../simulation
   ../render/extern/include
   ../../../intern/ghost
   ../../../intern/glew-mx
@@ -57,7 +58,6 @@ set(INC
 )
 
 set(INC_SYS
-  ${GLEW_INCLUDE_PATH}
   ${ZLIB_INCLUDE_DIRS}
 )
 
@@ -77,6 +77,7 @@ set(SRC
   intern/armature.c
   intern/armature_deform.c
   intern/armature_update.c
+  intern/attribute.c
   intern/autoexec.c
   intern/blender.c
   intern/blender_copybuffer.c
@@ -100,6 +101,7 @@ set(SRC
   intern/context.c
   intern/crazyspace.c
   intern/curve.c
+  intern/curve_bevel.c
   intern/curve_decimate.c
   intern/curve_deform.c
   intern/curveprofile.c
@@ -107,7 +109,6 @@ set(SRC
   intern/customdata_file.c
   intern/data_transfer.c
   intern/deform.c
-  intern/derived_node_tree.cc
   intern/displist.c
   intern/displist_tangent.c
   intern/dynamicpaint.c
@@ -135,6 +136,7 @@ set(SRC
   intern/idtype.c
   intern/image.c
   intern/image_gen.c
+  intern/image_gpu.c
   intern/image_save.c
   intern/ipo.c
   intern/kelvinlet.c
@@ -188,8 +190,6 @@ set(SRC
   intern/multires_unsubdivide.c
   intern/nla.c
   intern/node.c
-  intern/node_tree_multi_function.cc
-  intern/node_tree_ref.cc
   intern/object.c
   intern/object_deform.c
   intern/object_dupli.c
@@ -213,11 +213,6 @@ set(SRC
   intern/rigidbody.c
   intern/scene.c
   intern/screen.c
-  intern/seqcache.c
-  intern/seqeffects.c
-  intern/seqmodifier.c
-  intern/seqprefetch.c
-  intern/sequencer.c
   intern/shader_fx.c
   intern/shrinkwrap.c
   intern/simulation.cc
@@ -268,6 +263,7 @@ set(SRC
   BKE_animsys.h
   BKE_appdir.h
   BKE_armature.h
+  BKE_attribute.h
   BKE_autoexec.h
   BKE_blender.h
   BKE_blender_copybuffer.h
@@ -298,7 +294,6 @@ set(SRC
   BKE_customdata_file.h
   BKE_data_transfer.h
   BKE_deform.h
-  BKE_derived_node_tree.hh
   BKE_displist.h
   BKE_displist_tangent.h
   BKE_duplilist.h
@@ -324,6 +319,7 @@ set(SRC
   BKE_idprop.h
   BKE_idtype.h
   BKE_image.h
+  BKE_image_save.h
   BKE_ipo.h
   BKE_kelvinlet.h
   BKE_key.h
@@ -358,8 +354,6 @@ set(SRC
   BKE_multires.h
   BKE_nla.h
   BKE_node.h
-  BKE_node_tree_multi_function.hh
-  BKE_node_tree_ref.hh
   BKE_object.h
   BKE_object_deform.h
   BKE_object_facemap.h
@@ -369,13 +363,14 @@ set(SRC
   BKE_paint.h
   BKE_particle.h
   BKE_pbvh.h
+  BKE_persistent_data_handle.hh
   BKE_pointcache.h
   BKE_pointcloud.h
   BKE_report.h
   BKE_rigidbody.h
   BKE_scene.h
   BKE_screen.h
-  BKE_sequencer.h
+  BKE_sequencer_offscreen.h
   BKE_shader_fx.h
   BKE_shrinkwrap.h
   BKE_simulation.h
@@ -414,6 +409,7 @@ set(SRC
   intern/multires_inline.h
   intern/multires_reshape.h
   intern/multires_unsubdivide.h
+  intern/ocean_intern.h
   intern/pbvh_intern.h
   intern/subdiv_converter.h
   intern/subdiv_inline.h
@@ -440,9 +436,9 @@ set(LIB
   bf_intern_opensubdiv  # Uses stub when disabled.
   bf_modifiers
   bf_nodes
-  bf_physics
   bf_rna
   bf_shader_fx
+  bf_simulation
 )
 
 if(WITH_BINRELOC)
@@ -455,7 +451,6 @@ if(WITH_BINRELOC)
   add_definitions(-DWITH_BINRELOC)
 endif()
 
-add_definitions(${GL_DEFINITIONS})
 
 if(WIN32)
   list(APPEND INC
@@ -482,9 +477,15 @@ if(WITH_BULLET)
   list(APPEND INC
     ../../../intern/rigidbody
   )
+
+  if(NOT WITH_SYSTEM_BULLET)
+    list(APPEND LIB
+      extern_bullet
+    )
+  endif()
+
   list(APPEND LIB
     bf_intern_rigidbody
-    extern_bullet
 
     ${BULLET_LIBRARIES}
   )
@@ -698,3 +699,16 @@ blender_add_lib(bf_blenkernel "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
 # Needed so we can use dna_type_offsets.h for defaults initialization.
 add_dependencies(bf_blenkernel bf_dna)
+
+
+if(WITH_GTESTS)
+  set(TEST_SRC
+    intern/armature_test.cc
+    intern/fcurve_test.cc
+  )
+  set(TEST_INC
+    ../editors/include
+  )
+  include(GTestTesting)
+  blender_add_test_lib(bf_blenkernel_tests "${TEST_SRC}" "${INC};${TEST_INC}" "${INC_SYS}" "${LIB}")
+endif()

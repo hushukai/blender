@@ -42,6 +42,7 @@
 #include "BLI_utildefines.h"
 
 #include "BKE_action.h"
+#include "BKE_armature.h"
 #include "BKE_context.h"
 #include "BKE_curve.h"
 #include "BKE_editmesh.h"
@@ -1343,8 +1344,8 @@ void drawDial3d(const TransInfo *t)
     BLI_assert(axis_idx >= MAN_AXIS_RANGE_ROT_START && axis_idx < MAN_AXIS_RANGE_ROT_END);
     gizmo_get_axis_color(axis_idx, NULL, color, color);
 
-    GPU_depth_test(false);
-    GPU_blend(true);
+    GPU_depth_test(GPU_DEPTH_NONE);
+    GPU_blend(GPU_BLEND_ALPHA);
     GPU_line_smooth(true);
 
     ED_gizmotypes_dial_3d_draw_util(mat_basis,
@@ -1359,8 +1360,8 @@ void drawDial3d(const TransInfo *t)
                                     });
 
     GPU_line_smooth(false);
-    GPU_depth_test(true);
-    GPU_blend(false);
+    GPU_depth_test(GPU_DEPTH_LESS_EQUAL);
+    GPU_blend(GPU_BLEND_NONE);
   }
 }
 
@@ -2053,7 +2054,7 @@ static void WIDGETGROUP_xform_cage_setup(const bContext *UNUSED(C), wmGizmoGroup
     for (int x = 0; x < 3; x++) {
       for (int y = 0; y < 3; y++) {
         for (int z = 0; z < 3; z++) {
-          bool constraint[3] = {x != 1, y != 1, z != 1};
+          const bool constraint[3] = {x != 1, y != 1, z != 1};
           ptr = WM_gizmo_operator_set(gz, i, ot_resize, NULL);
           if (prop_release_confirm == NULL) {
             prop_release_confirm = RNA_struct_find_property(ptr, "release_confirm");

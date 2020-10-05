@@ -376,6 +376,7 @@ WARN_MSGID_NOT_CAPITALIZED_ALLOWED = {
     "multi-res modifier",
     "non-triangle face",
     "normal",
+    "performance impact!",
     "right",
     "the lazy dog",
     "unable to load movie clip",
@@ -601,8 +602,11 @@ class I18nSettings:
         return json.dumps(export_dict)
 
     def load(self, fname, reset=False):
+        reset = reset or fname is None
         if reset:
             self.__dict__ = {uid: data for uid, data in globals().items() if not uid.startswith("_")}
+        if fname is None:
+            return
         if isinstance(fname, str):
             if not os.path.isfile(fname):
                 # Assume it is already real JSon string...

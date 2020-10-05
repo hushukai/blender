@@ -241,13 +241,13 @@ int ED_fsmenu_get_nentries(struct FSMenu *fsmenu, FSMenuCategory category)
   return count;
 }
 
-FSMenuEntry *ED_fsmenu_get_entry(struct FSMenu *fsmenu, FSMenuCategory category, int index)
+FSMenuEntry *ED_fsmenu_get_entry(struct FSMenu *fsmenu, FSMenuCategory category, int idx)
 {
   FSMenuEntry *fsm_iter;
 
-  for (fsm_iter = ED_fsmenu_get_category(fsmenu, category); fsm_iter && index;
+  for (fsm_iter = ED_fsmenu_get_category(fsmenu, category); fsm_iter && idx;
        fsm_iter = fsm_iter->next) {
-    index--;
+    idx--;
   }
 
   return fsm_iter;
@@ -645,11 +645,10 @@ void fsmenu_read_system(struct FSMenu *fsmenu, int read_bookmarks)
     wchar_t wline[FILE_MAXDIR];
     __int64 tmp;
     char tmps[4], *name;
-    int i;
 
     tmp = GetLogicalDrives();
 
-    for (i = 0; i < 26; i++) {
+    for (int i = 0; i < 26; i++) {
       if ((tmp >> i) & 1) {
         tmps[0] = 'A' + i;
         tmps[1] = ':';
@@ -938,7 +937,7 @@ void fsmenu_read_system(struct FSMenu *fsmenu, int read_bookmarks)
 
       fp = setmntent(MOUNTED, "r");
       if (fp == NULL) {
-        fprintf(stderr, "could not get a list of mounted filesystems\n");
+        fprintf(stderr, "could not get a list of mounted file-systems\n");
       }
       else {
         while ((mnt = getmntent(fp))) {
@@ -1129,10 +1128,13 @@ int fsmenu_get_active_indices(struct FSMenu *fsmenu, enum FSMenuCategory categor
  * before being defined as unreachable by the OS, we need to validate the bookmarks in an async
  * job...
  */
-static void fsmenu_bookmark_validate_job_startjob(void *fsmenuv,
-                                                  short *stop,
-                                                  short *do_update,
-                                                  float *UNUSED(progress))
+static void fsmenu_bookmark_validate_job_startjob(
+    void *fsmenuv,
+    /* Cannot be const, this function implements wm_jobs_start_callback.
+     * NOLINTNEXTLINE: readability-non-const-parameter. */
+    short *stop,
+    short *do_update,
+    float *UNUSED(progress))
 {
   FSMenu *fsmenu = fsmenuv;
 

@@ -23,8 +23,11 @@
  * Blender copied the conventions quite some, and expanded it with internal new defines (ton)
  */
 
-#ifndef __WM_EVENT_TYPES_H__
-#define __WM_EVENT_TYPES_H__
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* customdata type */
 enum {
@@ -348,7 +351,7 @@ enum {
 
 /* for event checks */
 /* only used for KM_TEXTINPUT, so assume that we want all user-inputtable ascii codes included */
-/* UNUSED - see wm_eventmatch - BUG [#30479] */
+/* UNUSED - see wm_eventmatch - BUG T30479. */
 /* #define ISTEXTINPUT(event_type)  ((event_type) >= ' ' && (event_type) <= 255) */
 /* note, an alternative could be to check 'event->utf8_buf' */
 
@@ -489,4 +492,6 @@ enum {
   GESTURE_MODAL_CIRCLE_SIZE = 11,
 };
 
-#endif /* __WM_EVENT_TYPES_H__ */
+#ifdef __cplusplus
+}
+#endif

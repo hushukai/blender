@@ -277,7 +277,7 @@ void DocumentImporter::translate_anim_recursive(COLLADAFW::Node *node,
                                                 COLLADAFW::Node *par = NULL,
                                                 Object *parob = NULL)
 {
-  /* The split in #29246, rootmap must point at actual root when
+  /* The split in T29246, rootmap must point at actual root when
    * calculating bones in apply_curves_as_matrix. - actual root is the root node.
    * This has to do with inverse bind poses being world space
    * (the sources for skinned bones' restposes) and the way
@@ -1253,9 +1253,6 @@ bool DocumentImporter::is_armature(COLLADAFW::Node *node)
   for (unsigned int i = 0; i < child_nodes.getCount(); i++) {
     if (child_nodes[i]->getType() == COLLADAFW::Node::JOINT) {
       return true;
-    }
-    else {
-      continue;
     }
   }
 

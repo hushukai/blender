@@ -77,10 +77,10 @@ class DATA_PT_volume_file(DataButtonsPanel, Panel):
 
         error_msg = volume.grids.error_message
         if len(error_msg):
-          layout.separator()
-          col = layout.column(align=True)
-          col.label(text="Failed to load volume:")
-          col.label(text=error_msg)
+            layout.separator()
+            col = layout.column(align=True)
+            col.label(text="Failed to load volume:")
+            col.label(text=error_msg)
 
 
 class VOLUME_UL_grids(UIList):
@@ -142,6 +142,9 @@ class DATA_PT_volume_viewport_display(DataButtonsPanel, Panel):
 
         volume = context.volume
         display = volume.display
+        axis_slice_method = display.axis_slice_method
+
+        do_full_slicing = (axis_slice_method == 'FULL')
 
         col = layout.column(align=True)
         col.prop(display, "wireframe_type")
@@ -149,7 +152,14 @@ class DATA_PT_volume_viewport_display(DataButtonsPanel, Panel):
         sub.active = display.wireframe_type in {'BOXES', 'POINTS'}
         sub.prop(display, "wireframe_detail", text="Detail")
 
-        layout.prop(display, "density")
+        col = layout.column(align=True)
+        col.prop(display, "density")
+        col.prop(display, "interpolation_method")
+        col.prop(display, "axis_slice_method")
+
+        if not do_full_slicing:
+            col.prop(display, "slice_axis")
+            col.prop(display, "slice_depth")
 
 
 class DATA_PT_custom_props_volume(DataButtonsPanel, PropertyPanel, Panel):

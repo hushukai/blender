@@ -21,8 +21,7 @@
  * \ingroup spview3d
  */
 
-#ifndef __VIEW3D_INTERN_H__
-#define __VIEW3D_INTERN_H__
+#pragma once
 
 #include "ED_view3d.h"
 
@@ -275,7 +274,7 @@ void VIEW3D_GT_navigate_rotate(struct wmGizmoType *gzt);
 void VIEW3D_GGT_placement(struct wmGizmoGroupType *gzgt);
 
 /* workaround for trivial but noticeable camera bug caused by imprecision
- * between view border calculation in 2D/3D space, workaround for bug [#28037].
+ * between view border calculation in 2D/3D space, workaround for bug T28037.
  * without this define we get the old behavior which is to try and align them
  * both which _mostly_ works fine, but when the camera moves beyond ~1000 in
  * any direction it starts to fail */
@@ -284,5 +283,3 @@ void VIEW3D_GGT_placement(struct wmGizmoGroupType *gzgt);
 extern uchar view3d_camera_border_hack_col[3];
 extern bool view3d_camera_border_hack_test;
 #endif
-
-#endif /* __VIEW3D_INTERN_H__ */
